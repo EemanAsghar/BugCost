@@ -1,22 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #08080f;
-  --surface: #0f0f1a;
-  --surface-2: #14141f;
-  --border: #1c1c2e;
-  --border-bright: #252538;
-  --text: #e2e2f0;
-  --text-muted: #5a5a78;
-  --text-dim: #3a3a55;
-  --red: #ff4757;
-  --red-glow: #ff475720;
-  --green: #2ed573;
-  --green-glow: #2ed57318;
-  --orange: #ffa502;
-  --blue: #4dabf7;
-  --purple: #a855f7;
-  --purple-glow: #a855f720;
+  --bg:           #05050d;
+  --bg-2:         #08080f;
+  --surface:      #0d0d1a;
+  --surface-2:    #111120;
+  --surface-3:    #141428;
+  --border:       #18182a;
+  --border-bright:#222236;
+  --text:         #e8e8f5;
+  --text-muted:   #52527a;
+  --text-dim:     #32324a;
+  --red:          #ff3b5c;
+  --red-glow:     rgba(255,59,92,0.12);
+  --green:        #30d158;
+  --green-glow:   rgba(48,209,88,0.12);
+  --orange:       #ff9f0a;
+  --blue:         #0a84ff;
+  --blue-bright:  #4dabf7;
+  --purple:       #bf5af2;
+  --glass:        rgba(10,10,22,0.75);
+  --glass-border: rgba(255,255,255,0.045);
 }
 
 * {
@@ -46,25 +50,52 @@ body {
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  50%       { opacity: 0.25; }
 }
-
-@keyframes scan-line {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
+@keyframes scan-sweep {
+  0%   { left: -60%; }
+  100% { left: 110%; }
 }
-
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
 @keyframes flicker {
   0%, 100% { opacity: 1; }
   92% { opacity: 1; }
-  93% { opacity: 0.8; }
+  93% { opacity: 0.7; }
   94% { opacity: 1; }
 }
-
-.pulse-dot {
-  animation: pulse-dot 1.5s ease-in-out infinite;
+@keyframes border-glow {
+  0%, 100% { box-shadow: 0 0 0px rgba(255,59,92,0); }
+  50%       { box-shadow: 0 0 24px rgba(255,59,92,0.25); }
 }
 
-.flicker {
-  animation: flicker 4s ease-in-out infinite;
+.pulse-dot  { animation: pulse-dot 1.6s ease-in-out infinite; }
+.glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+.flicker    { animation: flicker 5s ease-in-out infinite; }
+.border-glow { animation: border-glow 2.5s ease-in-out infinite; }
+
+/* glassmorphism */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+}
+
+/* scan shimmer overlay */
+.scan-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255,255,255,0.025) 50%,
+    transparent 60%
+  );
+  width: 60%;
+  animation: scan-sweep 3s ease-in-out infinite;
+  pointer-events: none;
 }

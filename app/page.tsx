@@ -1,36 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  AlertTriangle,
-  GitCommit,
-  DollarSign,
-  Users,
-  Zap,
-  Database,
-  ChevronRight,
-  Activity,
-  Shield,
-  Clock,
-} from "lucide-react";
-import type { BugRow } from "@/lib/coralQuery";
-import { InvestigationPanel } from "@/app/components/InvestigationPanel";
+import { Database, Shield, Zap } from "lucide-react";
+import type { BugRow, TimelinePoint } from "@/lib/coralQuery";
+import { CinematicTimeline } from "@/app/components/CinematicTimeline";
+import { AIWorkspace } from "@/app/components/AIWorkspace";
 
-const CORAL_QUERY = `SELECT s.title AS bug, s.times_seen AS occurrences,
-       g.author AS introduced_by, g.title AS commit,
-       g.committed_at, s.first_seen,
-       COUNT(p.id) AS failed_payments,
-       SUM(p.amount) / 100.0 AS revenue_lost_usd
-FROM sentry.issues s
-JOIN github.commits g
-  ON g.committed_at <= s.first_seen
- AND g.committed_at >= s.first_seen - INTERVAL '2 hours'
-JOIN stripe.charges p
-  ON p.created_at >= s.first_seen AND p.status = 'failed'
-WHERE s.level = 'fatal'
-GROUP BY s.title, s.times_seen, g.author, g.title, g.committed_at, s.first_seen
-ORDER BY revenue_lost_usd DESC;`;
+// ─── count-up hook ────────────────────────────────────────────────────────────
+
+function useCountUp(target: number, duration = 1600, active = false) {
+  const [value, setValue] = useState(0);
+  const raf = useRef<number>(0);
+
+  useEffect(() => {
+    if (!active || target === 0) return;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p); // easeOutExpo
+      setValue(Math.floor(eased * target));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [target, duration, active]);
+
+  return value;
+}
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
   return new Intl.NumberFormat("en-US", {
@@ -49,474 +50,832 @@ function timeAgo(iso: string) {
   return "just now";
 }
 
-function SeverityBar({ value, max }: { value: number; max: number }) {
-  const pct = Math.min((value / max) * 100, 100);
-  const color = pct > 66 ? "#ff4757" : pct > 33 ? "#ffa502" : "#2ed573";
-  return (
-    <div className="h-1 w-14 rounded-full overflow-hidden mt-1.5" style={{ background: "var(--border)" }}>
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${pct}%` }}
-        transition={{ duration: 0.8, delay: 0.3 }}
-        className="h-full rounded-full"
-        style={{ background: color }}
-      />
-    </div>
-  );
-}
+// ─── incident card ────────────────────────────────────────────────────────────
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  color = "var(--red)",
-  delay = 0,
+function IncidentCard({
+  bug,
+  isSelected,
+  maxRevenue,
+  rank,
+  onClick,
 }: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  sub?: string;
-  color?: string;
-  delay?: number;
+  bug: BugRow;
+  isSelected: boolean;
+  maxRevenue: number;
+  rank: number;
+  onClick: () => void;
 }) {
+  const [hovered, setHovered] = useState(false);
+  const pct = Math.min((bug.revenue_lost_usd / maxRevenue) * 100, 100);
+  const barColor = pct > 66 ? "var(--red)" : pct > 33 ? "var(--orange)" : "var(--green)";
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="rounded-xl p-4 flex gap-3 items-start"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: rank * 0.06 }}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: "13px 14px 11px",
+        borderRadius: 10,
+        cursor: "pointer",
+        background: isSelected
+          ? "rgba(255,59,92,0.07)"
+          : hovered
+          ? "rgba(255,255,255,0.025)"
+          : "transparent",
+        border: `1px solid ${isSelected ? "rgba(255,59,92,0.3)" : "transparent"}`,
+        borderLeft: `2px solid ${isSelected ? "var(--red)" : "transparent"}`,
+        transition: "all 0.2s",
+        position: "relative",
+        overflow: "hidden",
+        marginBottom: 2,
+      }}
     >
+      {/* scanning shimmer on selected */}
+      {isSelected && (
+        <motion.div
+          animate={{ opacity: [0, 0.08, 0] }}
+          transition={{ duration: 3, repeat: Infinity }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "var(--red)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* top row: dot + title + revenue */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 5 }}>
+        <motion.span
+          animate={
+            isSelected
+              ? { opacity: [1, 0.3, 1] }
+              : {}
+          }
+          transition={{ duration: 1.5, repeat: isSelected ? Infinity : 0 }}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: isSelected ? "var(--red)" : "rgba(255,59,92,0.4)",
+            flexShrink: 0,
+            marginTop: 4,
+          }}
+        />
+        <p
+          style={{
+            flex: 1,
+            fontSize: 12,
+            fontWeight: 500,
+            color: isSelected ? "var(--text)" : hovered ? "var(--text)" : "#c0c0d8",
+            lineHeight: 1.45,
+            transition: "color 0.2s",
+          }}
+        >
+          {bug.bug.length > 46 ? bug.bug.slice(0, 46) + "…" : bug.bug}
+        </p>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: "var(--red)",
+            flexShrink: 0,
+            marginLeft: 6,
+          }}
+        >
+          {fmt(bug.revenue_lost_usd)}
+        </span>
+      </div>
+
+      {/* meta row */}
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-        style={{ background: color + "18" }}
+        style={{
+          display: "flex",
+          gap: 8,
+          paddingLeft: 13,
+          marginBottom: 7,
+          flexWrap: "wrap",
+        }}
       >
-        <Icon size={15} style={{ color }} />
+        <span
+          style={{
+            fontSize: 10,
+            color: "#0a84ff",
+            fontWeight: 500,
+          }}
+        >
+          {bug.introduced_by}
+        </span>
+        <span style={{ fontSize: 10, color: "var(--text-dim)" }}>·</span>
+        <span
+          style={{
+            fontSize: 10,
+            color: "var(--text-muted)",
+            fontFamily: "ui-monospace, monospace",
+          }}
+        >
+          {bug.pr}
+        </span>
+        <span style={{ fontSize: 10, color: "var(--text-dim)" }}>·</span>
+        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+          {bug.occurrences.toLocaleString()} errors
+        </span>
+        <span style={{ fontSize: 10, color: "var(--text-dim)", marginLeft: "auto" }}>
+          {timeAgo(bug.first_seen)}
+        </span>
       </div>
-      <div>
-        <p className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
-        <p className="text-lg font-semibold leading-tight">{value}</p>
-        {sub && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{sub}</p>}
+
+      {/* severity bar */}
+      <div style={{ paddingLeft: 13 }}>
+        <div
+          style={{
+            height: 2,
+            borderRadius: 1,
+            background: "var(--border)",
+            overflow: "hidden",
+          }}
+        >
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.9, delay: 0.1 + rank * 0.06 }}
+            style={{ height: "100%", borderRadius: 1, background: barColor }}
+          />
+        </div>
       </div>
+
+      {/* investigating badge */}
+      <AnimatePresence>
+        {isSelected && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{
+              marginTop: 7,
+              paddingLeft: 13,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <motion.span
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: "var(--orange)",
+                display: "inline-block",
+              }}
+            />
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--orange)",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Investigating
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
 
+// ─── hero banner ──────────────────────────────────────────────────────────────
+
+function HeroBanner({
+  totalRevenue,
+  bugsCount,
+  totalPayments,
+  dataReady,
+}: {
+  totalRevenue: number;
+  bugsCount: number;
+  totalPayments: number;
+  dataReady: boolean;
+}) {
+  const displayed = useCountUp(totalRevenue, 1800, dataReady);
+
+  return (
+    <div
+      className="border-glow"
+      style={{
+        flexShrink: 0,
+        padding: "18px 28px",
+        background:
+          "linear-gradient(135deg, rgba(255,59,92,0.1) 0%, rgba(255,159,10,0.04) 50%, rgba(10,132,255,0.05) 100%)",
+        borderBottom: "1px solid rgba(255,59,92,0.18)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* background noise / grain */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage:
+            "radial-gradient(circle at 20% 50%, rgba(255,59,92,0.06) 0%, transparent 60%), radial-gradient(circle at 80% 50%, rgba(10,132,255,0.04) 0%, transparent 60%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          gap: 24,
+        }}
+      >
+        {/* Left: alert + amount */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: "rgba(255,59,92,0.15)",
+              border: "1px solid rgba(255,59,92,0.35)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>⚠</span>
+          </div>
+          <div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <motion.span
+                style={{
+                  fontSize: 32,
+                  fontWeight: 800,
+                  color: "var(--red)",
+                  fontVariantNumeric: "tabular-nums",
+                  lineHeight: 1,
+                }}
+              >
+                {dataReady
+                  ? new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                      maximumFractionDigits: 0,
+                    }).format(displayed)
+                  : "$—"}
+              </motion.span>
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "rgba(255,59,92,0.7)",
+                  marginBottom: 2,
+                }}
+              >
+                Revenue Impact
+              </span>
+            </div>
+            <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
+              AI investigation active · Coral cross-source JOIN
+            </p>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div
+          style={{
+            width: 1,
+            height: 36,
+            background: "rgba(255,255,255,0.07)",
+          }}
+        />
+
+        {/* Stats chips */}
+        <div style={{ display: "flex", gap: 12 }}>
+          {[
+            { label: "Fatal incidents", value: dataReady ? bugsCount.toString() : "—", color: "var(--red)" },
+            { label: "Failed charges", value: dataReady ? totalPayments.toLocaleString() : "—", color: "var(--orange)" },
+            { label: "Data sources", value: "4", color: "var(--blue-bright)" },
+          ].map((s) => (
+            <div
+              key={s.label}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 8,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <p style={{ fontSize: 16, fontWeight: 700, color: s.color, lineHeight: 1 }}>
+                {s.value}
+              </p>
+              <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3 }}>
+                {s.label}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Right: live indicator */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          <motion.div
+            animate={{ opacity: [1, 0.3, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "var(--green)",
+            }}
+          />
+          <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>
+            Live
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Coral SQL tooltip ────────────────────────────────────────────────────────
+
+const CORAL_SQL = `SELECT s.title, g.author AS introduced_by,
+       COUNT(p.id) AS failed_payments,
+       SUM(p.amount)/100.0 AS revenue_lost_usd
+FROM sentry.issues s
+JOIN github.commits g
+  ON g.committed_at <= s.first_seen
+ AND g.committed_at >= s.first_seen - INTERVAL '2 hours'
+JOIN stripe.charges p
+  ON p.created_at >= s.first_seen
+ AND p.status = 'failed'
+WHERE s.level = 'fatal'
+GROUP BY s.title, g.author
+ORDER BY revenue_lost_usd DESC;`;
+
+// ─── main dashboard ───────────────────────────────────────────────────────────
+
 export default function Dashboard() {
   const [bugs, setBugs] = useState<BugRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [phase, setPhase] = useState<"querying" | "correlating" | "scoring" | "done">("querying");
-  const [showQuery, setShowQuery] = useState(false);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedBug, setSelectedBug] = useState<BugRow | null>(null);
+  const [timeline, setTimeline] = useState<TimelinePoint[]>([]);
+  const [timelinePhase, setTimelinePhase] = useState(0);
+  const [timelineDone, setTimelineDone] = useState(false);
+  const [showSQL, setShowSQL] = useState(false);
 
+  // fetch bugs on mount
   useEffect(() => {
     const run = async () => {
-      setPhase("querying");
-      await new Promise((r) => setTimeout(r, 900));
-      setPhase("correlating");
-      await new Promise((r) => setTimeout(r, 800));
-      setPhase("scoring");
+      await new Promise((r) => setTimeout(r, 400));
       const res = await fetch("/api/investigate");
       const data = await res.json();
-      await new Promise((r) => setTimeout(r, 500));
       setBugs(data.results);
-      setPhase("done");
       setLoading(false);
     };
     run();
   }, []);
 
-  const totalRevenue = bugs.reduce((s, b) => s + b.revenue_lost_usd, 0);
-  const totalUsers = bugs.reduce((s, b) => s + b.affected_users, 0);
-  const maxRevenue = bugs[0]?.revenue_lost_usd ?? 1;
-  const panelOpen = selectedBug !== null;
+  // auto-select top incident 600ms after data loads
+  useEffect(() => {
+    if (bugs.length > 0 && !selectedBug) {
+      setTimeout(() => setSelectedBug(bugs[0]), 600);
+    }
+  }, [bugs]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // compact columns when panel open
-  const colsCompact = "1.5fr 0.8fr 0.8fr 0.8fr 28px";
-  const colsFull = "2fr 0.9fr 1.2fr 0.8fr 0.8fr 0.8fr 28px";
-  const cols = panelOpen ? colsCompact : colsFull;
+  // fetch timeline when incident selected
+  useEffect(() => {
+    if (!selectedBug) return;
+    setTimeline([]);
+    setTimelinePhase(0);
+    setTimelineDone(false);
+    fetch(`/api/bug/${selectedBug.id}`)
+      .then((r) => r.json())
+      .then((d) => setTimeline(d.timeline ?? []));
+  }, [selectedBug?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalRevenue = bugs.reduce((s, b) => s + b.revenue_lost_usd, 0);
+  const totalPayments = bugs.reduce((s, b) => s + b.failed_payments, 0);
+  const maxRevenue = bugs[0]?.revenue_lost_usd ?? 1;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "var(--bg)" }}>
-      {/* Header */}
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        background: "var(--bg)",
+      }}
+    >
+      {/* ─── Header ────────────────────────────────────────────────────────── */}
       <header
-        className="border-b px-6 py-3 flex items-center justify-between flex-shrink-0 z-40"
         style={{
-          background: "rgba(8,8,15,0.95)",
+          flexShrink: 0,
+          height: 46,
+          display: "flex",
+          alignItems: "center",
+          padding: "0 20px",
+          gap: 12,
+          background: "rgba(5,5,13,0.95)",
           backdropFilter: "blur(12px)",
-          borderColor: "var(--border)",
+          borderBottom: "1px solid var(--border)",
+          zIndex: 40,
         }}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: "var(--red-glow)", border: "1px solid #ff475740" }}
-          >
-            <Shield size={14} style={{ color: "var(--red)" }} />
-          </div>
-          <span className="font-semibold text-sm tracking-tight">BugCost</span>
-          <span
-            className="text-xs px-2 py-0.5 rounded-full"
-            style={{ background: "var(--surface-2)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
-          >
-            Demo
-          </span>
+        <div
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 7,
+            background: "rgba(255,59,92,0.12)",
+            border: "1px solid rgba(255,59,92,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Shield size={13} color="var(--red)" />
         </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setShowQuery(!showQuery)}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-            style={{
-              color: showQuery ? "var(--blue)" : "var(--text-muted)",
-              border: `1px solid ${showQuery ? "#4dabf740" : "var(--border)"}`,
-              background: showQuery ? "#4dabf710" : "transparent",
-            }}
-          >
-            <Database size={12} />
-            Coral SQL
-          </button>
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-            <div
-              className="w-1.5 h-1.5 rounded-full pulse-dot"
-              style={{ background: phase === "done" ? "var(--green)" : "var(--orange)" }}
-            />
-            {phase === "done" ? "Live" : "Investigating..."}
-          </div>
+        <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+          BugCost
+        </span>
+        <span
+          style={{
+            fontSize: 10,
+            padding: "2px 7px",
+            borderRadius: 99,
+            background: "var(--surface-2)",
+            color: "var(--text-muted)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          Demo
+        </span>
+
+        <div style={{ flex: 1 }} />
+
+        <button
+          onClick={() => setShowSQL(!showSQL)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 11,
+            padding: "5px 10px",
+            borderRadius: 6,
+            cursor: "pointer",
+            color: showSQL ? "var(--blue-bright)" : "var(--text-muted)",
+            border: `1px solid ${showSQL ? "rgba(10,132,255,0.35)" : "var(--border)"}`,
+            background: showSQL ? "rgba(10,132,255,0.08)" : "transparent",
+            transition: "all 0.2s",
+          }}
+        >
+          <Database size={11} />
+          Coral SQL
+        </button>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 11,
+            color: "var(--text-muted)",
+          }}
+        >
+          <Zap size={11} color="var(--text-muted)" />
+          Powered by{" "}
+          <span style={{ color: "var(--text)", fontWeight: 500 }}>Coral</span>
         </div>
       </header>
 
-      {/* Body: left content + right panel */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* LEFT: scrollable dashboard */}
-        <div className="flex-1 min-w-0 overflow-y-auto px-6 py-5">
+      {/* ─── Hero Banner ───────────────────────────────────────────────────── */}
+      <HeroBanner
+        totalRevenue={totalRevenue}
+        bugsCount={bugs.length}
+        totalPayments={totalPayments}
+        dataReady={!loading}
+      />
 
-          {/* Coral query panel */}
-          <AnimatePresence>
-            {showQuery && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-5 overflow-hidden"
+      {/* ─── SQL drawer ────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showSQL && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            style={{ flexShrink: 0, overflow: "hidden" }}
+          >
+            <div
+              style={{
+                padding: "14px 24px",
+                background: "rgba(10,132,255,0.04)",
+                borderBottom: "1px solid rgba(10,132,255,0.12)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 10,
+                }}
               >
-                <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Database size={12} style={{ color: "var(--blue)" }} />
-                    <span className="text-xs font-medium" style={{ color: "var(--blue)" }}>
-                      Coral SQL — 3-source JOIN
-                    </span>
-                    <span className="ml-auto text-xs" style={{ color: "var(--text-muted)" }}>
-                      sentry.issues × github.commits × stripe.charges
-                    </span>
-                  </div>
-                  <pre
-                    className="text-xs leading-relaxed overflow-x-auto"
-                    style={{ color: "#a8b5cc", fontFamily: "ui-monospace, monospace" }}
-                  >
-                    {CORAL_QUERY}
-                  </pre>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <Database size={11} color="var(--blue-bright)" />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "var(--blue-bright)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Coral SQL — 3-source JOIN
+                </span>
+                <span
+                  style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: "auto" }}
+                >
+                  sentry.issues × github.commits × stripe.charges
+                </span>
+              </div>
+              <pre
+                style={{
+                  fontSize: 11,
+                  color: "#8899bb",
+                  fontFamily: "ui-monospace, monospace",
+                  lineHeight: 1.7,
+                  overflowX: "auto",
+                  margin: 0,
+                }}
+              >
+                {CORAL_SQL}
+              </pre>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Investigation status */}
+      {/* ─── Three-panel body ───────────────────────────────────────────────── */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          overflow: "hidden",
+          minHeight: 0,
+        }}
+      >
+        {/* LEFT — incident feed */}
+        <div
+          style={{
+            width: 272,
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            borderRight: "1px solid var(--border)",
+            overflow: "hidden",
+          }}
+        >
+          {/* sidebar header */}
+          <div
+            style={{
+              padding: "12px 16px 10px",
+              flexShrink: 0,
+              borderBottom: "1px solid var(--border)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                color: "var(--text-muted)",
+              }}
+            >
+              Incidents
+            </span>
+            {!loading && (
+              <span
+                style={{
+                  fontSize: 10,
+                  padding: "1px 6px",
+                  borderRadius: 99,
+                  background: "rgba(255,59,92,0.12)",
+                  color: "var(--red)",
+                  border: "1px solid rgba(255,59,92,0.25)",
+                  fontWeight: 600,
+                }}
+              >
+                {bugs.length}
+              </span>
+            )}
+          </div>
+
+          {/* cards list */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "8px 10px",
+            }}
+          >
+            {loading ? (
+              /* skeleton */
+              [...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  animate={{ opacity: [0.2, 0.5, 0.2] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.1 }}
+                  style={{
+                    height: 70,
+                    borderRadius: 8,
+                    background: "var(--surface)",
+                    marginBottom: 4,
+                  }}
+                />
+              ))
+            ) : (
+              bugs.map((bug, i) => (
+                <IncidentCard
+                  key={bug.id}
+                  bug={bug}
+                  isSelected={selectedBug?.id === bug.id}
+                  maxRevenue={maxRevenue}
+                  rank={i}
+                  onClick={() =>
+                    setSelectedBug(selectedBug?.id === bug.id ? null : bug)
+                  }
+                />
+              ))
+            )}
+          </div>
+
+          {/* Coral attribution */}
+          <div
+            style={{
+              padding: "10px 14px",
+              flexShrink: 0,
+              borderTop: "1px solid var(--border)",
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+            }}
+          >
+            <Zap size={10} color="var(--text-dim)" />
+            <span style={{ fontSize: 10, color: "var(--text-dim)" }}>
+              Coral · 3 sources · 0 ETL
+            </span>
+          </div>
+        </div>
+
+        {/* CENTER — cinematic timeline */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            borderRight: "1px solid var(--border)",
+            overflow: "hidden",
+            position: "relative",
+          }}
+        >
           <AnimatePresence mode="wait">
-            {loading && (
+            {selectedBug ? (
               <motion.div
-                key="loading"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="mb-5 rounded-xl p-4 flex items-center gap-3"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                key={selectedBug.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                style={{ height: "100%", overflow: "hidden" }}
+              >
+                <CinematicTimeline
+                  bug={selectedBug}
+                  timeline={timeline}
+                  phase={timelinePhase}
+                  isDone={timelineDone}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                  padding: 40,
+                }}
               >
                 <motion.div
-                  className="w-5 h-5 rounded-full border-2 flex-shrink-0"
-                  style={{ borderColor: "var(--blue)", borderTopColor: "transparent" }}
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                  style={{
+                    width: "60%",
+                    height: 1,
+                    background:
+                      "linear-gradient(90deg, transparent, var(--border-bright), transparent)",
+                  }}
                 />
-                <div>
-                  <p className="text-sm font-medium">
-                    {phase === "querying" && "Running Coral SQL query across 3 sources..."}
-                    {phase === "correlating" && "Correlating deployments, errors, and payment failures..."}
-                    {phase === "scoring" && "Calculating revenue impact per incident..."}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                    {phase === "querying" && "Joining sentry.issues × github.commits × stripe.charges"}
-                    {phase === "correlating" && "Matching commits within 2hr window before each incident"}
-                    {phase === "scoring" && "Aggregating failed Stripe charges per incident"}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Alert banner */}
-          <AnimatePresence>
-            {!loading && bugs.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="mb-4 rounded-xl p-3.5 flex items-center gap-3"
-                style={{ background: "var(--red-glow)", border: "1px solid #ff475740" }}
-              >
-                <AlertTriangle size={15} style={{ color: "var(--red)" }} className="flex-shrink-0" />
-                <p className="text-sm">
-                  <span style={{ color: "var(--red)" }} className="font-semibold">Revenue alert: </span>
-                  {fmt(totalRevenue)} lost across {bugs.length} fatal incidents.{" "}
-                  Top cause: <span className="font-medium">{bugs[0]?.introduced_by}</span> — {fmt(bugs[0]?.revenue_lost_usd)} impact.
-                  {!panelOpen && (
-                    <span style={{ color: "var(--text-muted)" }}>
-                      {" "}Click any row to investigate.
-                    </span>
-                  )}
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--text-muted)",
+                    textAlign: "center",
+                  }}
+                >
+                  Select an incident to begin investigation
+                </p>
+                <p style={{ fontSize: 11, color: "var(--text-dim)", textAlign: "center" }}>
+                  AI will autonomously correlate Sentry, GitHub, Stripe, and Slack
                 </p>
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Stats — hide some when panel open to save space */}
-          {!loading && (
-            <div className={`grid gap-3 mb-5 ${panelOpen ? "grid-cols-2" : "grid-cols-2 md:grid-cols-4"}`}>
-              <StatCard icon={DollarSign} label="Total Revenue Lost" value={fmt(totalRevenue)} sub="last 7 days" color="var(--red)" delay={0.1} />
-              <StatCard icon={AlertTriangle} label="Fatal Incidents" value={String(bugs.length)} sub="production bugs" color="var(--orange)" delay={0.15} />
-              {!panelOpen && (
-                <>
-                  <StatCard icon={Users} label="Users Affected" value={totalUsers.toLocaleString()} sub="estimated" color="var(--blue)" delay={0.2} />
-                  <StatCard icon={Activity} label="Failed Payments" value={bugs.reduce((s, b) => s + b.failed_payments, 0).toLocaleString()} sub="Stripe charges" color="var(--purple)" delay={0.25} />
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Incidents table */}
-          {!loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="rounded-xl overflow-hidden"
-              style={{ border: "1px solid var(--border)" }}
-            >
-              {/* Table header */}
-              <div
-                className="grid text-xs font-medium px-4 py-2.5"
-                style={{
-                  gridTemplateColumns: cols,
-                  background: "var(--surface)",
-                  color: "var(--text-muted)",
-                  borderBottom: "1px solid var(--border)",
-                  transition: "grid-template-columns 0.3s",
-                }}
-              >
-                <span>Bug</span>
-                <span>Introduced by</span>
-                {!panelOpen && <span>Commit</span>}
-                <span>Revenue lost</span>
-                {!panelOpen && <span>Payments failed</span>}
-                <span>First seen</span>
-                <span />
-              </div>
-
-              <div style={{ background: "var(--surface-2)" }}>
-                {bugs.map((bug, i) => {
-                  const isSelected = selectedBug?.id === bug.id;
-                  const isHovered = hoveredId === bug.id;
-                  return (
-                    <motion.div
-                      key={bug.id}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 + i * 0.05 }}
-                      onClick={() =>
-                        setSelectedBug(isSelected ? null : bug)
-                      }
-                      onMouseEnter={() => setHoveredId(bug.id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                      className="grid px-4 py-3.5 cursor-pointer items-center relative"
-                      style={{
-                        gridTemplateColumns: cols,
-                        borderBottom: i < bugs.length - 1 ? "1px solid var(--border)" : undefined,
-                        background: isSelected
-                          ? "#ff475710"
-                          : isHovered
-                          ? "var(--surface)"
-                          : "transparent",
-                        borderLeft: isSelected
-                          ? "2px solid var(--red)"
-                          : "2px solid transparent",
-                        transition: "background 0.2s, border-color 0.2s",
-                      }}
-                    >
-                      {/* scanning glow on selected row */}
-                      {isSelected && (
-                        <motion.div
-                          className="absolute inset-0 pointer-events-none"
-                          animate={{ opacity: [0, 0.08, 0] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                          style={{ background: "var(--red)" }}
-                        />
-                      )}
-
-                      {/* Bug */}
-                      <div className="min-w-0 pr-3">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span
-                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                            style={{ background: isSelected ? "var(--red)" : "#ff475760" }}
-                          />
-                          <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-                            {bug.id}
-                          </span>
-                          {isSelected && (
-                            <motion.span
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="text-xs px-1.5 py-0.5 rounded"
-                              style={{
-                                background: "#ff475720",
-                                color: "var(--red)",
-                                border: "1px solid #ff475740",
-                                fontSize: "9px",
-                              }}
-                            >
-                              Investigating
-                            </motion.span>
-                          )}
-                        </div>
-                        <p className="text-sm font-medium truncate leading-snug">
-                          {bug.bug.length > (panelOpen ? 42 : 60)
-                            ? bug.bug.slice(0, panelOpen ? 42 : 60) + "…"
-                            : bug.bug}
-                        </p>
-                        <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>
-                          {bug.culprit}
-                        </p>
-                        <SeverityBar value={bug.revenue_lost_usd} max={maxRevenue} />
-                      </div>
-
-                      {/* Author */}
-                      <div>
-                        <p className="text-sm" style={{ color: "var(--blue)" }}>
-                          {bug.introduced_by}
-                        </p>
-                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                          {bug.pr}
-                        </p>
-                      </div>
-
-                      {/* Commit — hidden when panel open */}
-                      {!panelOpen && (
-                        <div className="pr-2">
-                          <div className="flex items-center gap-1.5">
-                            <GitCommit size={11} style={{ color: "var(--text-muted)" }} className="flex-shrink-0" />
-                            <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
-                              {bug.commit.length > 38 ? bug.commit.slice(0, 38) + "…" : bug.commit}
-                            </p>
-                          </div>
-                          <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                            {timeAgo(bug.committed_at)}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Revenue */}
-                      <div>
-                        <p className="text-sm font-semibold" style={{ color: "var(--red)" }}>
-                          {fmt(bug.revenue_lost_usd)}
-                        </p>
-                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                          {bug.occurrences.toLocaleString()} errors
-                        </p>
-                      </div>
-
-                      {/* Payments — hidden when panel open */}
-                      {!panelOpen && (
-                        <div>
-                          <p className="text-sm">{bug.failed_payments}</p>
-                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>charges</p>
-                        </div>
-                      )}
-
-                      {/* Time */}
-                      <div>
-                        <div className="flex items-center gap-1">
-                          <Clock size={11} style={{ color: "var(--text-muted)" }} />
-                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            {timeAgo(bug.first_seen)}
-                          </p>
-                        </div>
-                        <p className="text-xs" style={{ color: "var(--text-dim)" }}>
-                          {new Date(bug.first_seen).toLocaleDateString()}
-                        </p>
-                      </div>
-
-                      {/* Chevron */}
-                      <motion.div
-                        animate={{ rotate: isSelected ? 90 : 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <ChevronRight
-                          size={14}
-                          style={{ color: isSelected ? "var(--red)" : isHovered ? "var(--text)" : "var(--text-dim)" }}
-                        />
-                      </motion.div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Footer */}
-          {!loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="mt-4 flex items-center gap-4 text-xs pb-4"
-              style={{ color: "var(--text-muted)" }}
-            >
-              <div className="flex items-center gap-1.5">
-                <Zap size={11} />
-                Powered by{" "}
-                <span className="font-medium" style={{ color: "var(--text)" }}>Coral</span>{" "}
-                cross-source SQL JOIN
-              </div>
-              <span style={{ color: "var(--border-bright)" }}>·</span>
-              <span>3 sources · 0 ETL · 0 glue code</span>
-              <span style={{ color: "var(--border-bright)" }}>·</span>
-              <span>100% local</span>
-            </motion.div>
-          )}
         </div>
 
-        {/* RIGHT: Investigation Panel */}
-        <AnimatePresence>
-          {selectedBug && (
-            <motion.div
-              key="panel"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 480, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: "spring", damping: 28, stiffness: 220 }}
-              className="flex-shrink-0 overflow-hidden h-full"
-              style={{ borderLeft: "1px solid var(--border)" }}
-            >
-              <div style={{ width: 480, height: "100%" }}>
-                <InvestigationPanel
+        {/* RIGHT — AI workspace */}
+        <div
+          style={{
+            width: 380,
+            flexShrink: 0,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <AnimatePresence mode="wait">
+            {selectedBug ? (
+              <motion.div
+                key={selectedBug.id}
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                transition={{ duration: 0.3 }}
+                style={{ height: "100%", overflow: "hidden" }}
+              >
+                <AIWorkspace
                   bug={selectedBug}
-                  onClose={() => setSelectedBug(null)}
+                  onPhaseChange={(phase, done) => {
+                    setTimelinePhase(phase);
+                    setTimelineDone(done);
+                  }}
                 />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="empty-ai"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  padding: 28,
+                }}
+              >
+                <motion.div
+                  animate={{ opacity: [0.2, 0.6, 0.2] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    textAlign: "center",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  AI Investigator ready.
+                  <br />
+                  Select an incident to begin.
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
