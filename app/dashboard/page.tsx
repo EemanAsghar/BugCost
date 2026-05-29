@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Database, Shield, Zap } from "lucide-react";
-import { UserButton, Show } from "@clerk/nextjs";
+import { UserButton, Show, useUser } from "@clerk/nextjs";
 import type { BugRow, TimelinePoint } from "@/lib/coralQuery";
 import { CinematicTimeline } from "@/app/components/CinematicTimeline";
 import { AIWorkspace } from "@/app/components/AIWorkspace";
@@ -428,6 +428,7 @@ ORDER BY revenue_lost_usd DESC;`;
 // ─── main dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const { user } = useUser();
   const [bugs, setBugs] = useState<BugRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBug, setSelectedBug] = useState<BugRow | null>(null);
@@ -438,6 +439,17 @@ export default function Dashboard() {
   const [coralMode, setCoralMode] = useState<"live" | "demo">("demo");
   const [coralSql, setCoralSql] = useState(CORAL_SQL);
   const [elapsed, setElapsed] = useState<number | null>(null);
+
+  // derive a display handle from Clerk profile
+  const userHandle = user
+    ? `@${(user.username ?? user.firstName ?? user.emailAddresses[0]?.emailAddress?.split("@")[0] ?? "you").toLowerCase().replace(/\s+/g, "-")}`
+    : null;
+
+  // inject user's handle into the top bug's "introduced_by" field so the
+  // dashboard feels personal — the rest of the demo data stays unchanged
+  const personalizedBugs = userHandle
+    ? bugs.map((b, i) => (i === 0 ? { ...b, introduced_by: userHandle } : b))
+    : bugs;
 
   // fetch bugs on mount
   useEffect(() => {
@@ -472,9 +484,9 @@ export default function Dashboard() {
       .then((d) => setTimeline(d.timeline ?? []));
   }, [selectedBug?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totalRevenue = bugs.reduce((s, b) => s + b.revenue_lost_usd, 0);
-  const totalPayments = bugs.reduce((s, b) => s + b.failed_payments, 0);
-  const maxRevenue = bugs[0]?.revenue_lost_usd ?? 1;
+  const totalRevenue = personalizedBugs.reduce((s, b) => s + b.revenue_lost_usd, 0);
+  const totalPayments = personalizedBugs.reduce((s, b) => s + b.failed_payments, 0);
+  const maxRevenue = personalizedBugs[0]?.revenue_lost_usd ?? 1;
 
   return (
     <div
@@ -547,6 +559,18 @@ export default function Dashboard() {
           {elapsed && <span style={{ opacity: 0.7 }}> · {elapsed}ms</span>}
         </motion.span>
 
+        {/* greeting */}
+        {user && (
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+            {user.firstName ?? user.emailAddresses[0]?.emailAddress?.split("@")[0]}
+            {coralMode === "demo" && (
+              <span style={{ marginLeft: 6, fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-dim)" }}>
+                demo data
+              </span>
+            )}
+          </span>
+        )}
+
         <div style={{ flex: 1 }} />
 
         <button
@@ -597,7 +621,7 @@ export default function Dashboard() {
       {/* ─── Hero Banner ───────────────────────────────────────────────────── */}
       <HeroBanner
         totalRevenue={totalRevenue}
-        bugsCount={bugs.length}
+        bugsCount={personalizedBugs.length}
         totalPayments={totalPayments}
         dataReady={!loading}
       />
@@ -716,7 +740,7 @@ export default function Dashboard() {
                   fontWeight: 600,
                 }}
               >
-                {bugs.length}
+                {personalizedBugs.length}
               </span>
             )}
           </div>
@@ -745,7 +769,7 @@ export default function Dashboard() {
                 />
               ))
             ) : (
-              bugs.map((bug, i) => (
+              personalizedBugs.map((bug, i) => (
                 <IncidentCard
                   key={bug.id}
                   bug={bug}
