@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Database, Shield, Zap } from "lucide-react";
+import { UserButton, Show } from "@clerk/nextjs";
 import type { BugRow, TimelinePoint } from "@/lib/coralQuery";
 import { CinematicTimeline } from "@/app/components/CinematicTimeline";
 import { AIWorkspace } from "@/app/components/AIWorkspace";
@@ -581,6 +582,16 @@ export default function Dashboard() {
           Powered by{" "}
           <span style={{ color: "var(--text)", fontWeight: 500 }}>Coral</span>
         </div>
+
+        <Show when="signed-in">
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "w-7 h-7",
+              },
+            }}
+          />
+        </Show>
       </header>
 
       {/* ─── Hero Banner ───────────────────────────────────────────────────── */}

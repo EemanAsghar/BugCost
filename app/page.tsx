@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Shield, ArrowRight, CheckCircle2, Zap, GitCommit, DollarSign, AlertTriangle, Database, Brain } from "lucide-react";
+import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 
 // ─── live counter ─────────────────────────────────────────────────────────────
 function useLiveCounter(start: number) {
@@ -167,6 +168,7 @@ const TECH_STACK = [
 
 // ─── navbar ───────────────────────────────────────────────────────────────────
 function NavBar({ onGetStarted }: { onGetStarted: () => void }) {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 24);
@@ -197,15 +199,26 @@ function NavBar({ onGetStarted }: { onGetStarted: () => void }) {
           >{l}</span>
         ))}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={onGetStarted}
-          style={{ fontSize: 12, color: "var(--text-muted)", padding: "6px 14px", borderRadius: 7, cursor: "pointer", background: "transparent", border: "none" }}>
-          Sign in
-        </button>
-        <button onClick={onGetStarted}
-          style={{ fontSize: 12, fontWeight: 700, color: "#fff", padding: "7px 16px", borderRadius: 7, cursor: "pointer", background: "var(--red)", border: "none" }}>
-          Get started →
-        </button>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <Show when="signed-out">
+          <SignInButton mode="redirect">
+            <button style={{ fontSize: 12, color: "var(--text-muted)", padding: "6px 14px", borderRadius: 7, cursor: "pointer", background: "transparent", border: "none" }}>
+              Sign in
+            </button>
+          </SignInButton>
+          <SignUpButton mode="redirect">
+            <button style={{ fontSize: 12, fontWeight: 700, color: "#fff", padding: "7px 16px", borderRadius: 7, cursor: "pointer", background: "var(--red)", border: "none" }}>
+              Get started →
+            </button>
+          </SignUpButton>
+        </Show>
+        <Show when="signed-in">
+          <button onClick={() => router.push("/dashboard")}
+            style={{ fontSize: 12, color: "var(--text-muted)", padding: "6px 14px", borderRadius: 7, cursor: "pointer", background: "transparent", border: "1px solid var(--border)" }}>
+            Dashboard →
+          </button>
+          <UserButton appearance={{ elements: { avatarBox: "w-7 h-7" } }} />
+        </Show>
       </div>
     </nav>
   );
