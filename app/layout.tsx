@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -20,8 +21,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.className}>
-      <body className="min-h-screen">{children}</body>
-    </html>
+    <ClerkProvider
+      signInUrl="/auth"
+      signUpUrl="/auth"
+      appearance={{
+        variables: {
+          colorPrimary: "#ff3b5c",
+          colorBackground: "#0d0d1a",
+          colorInputBackground: "#111120",
+          colorInputText: "#e8e8f5",
+          colorText: "#e8e8f5",
+          colorTextSecondary: "#52527a",
+          colorNeutral: "#52527a",
+          borderRadius: "0.6rem",
+          fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+        },
+      }}
+    >
+      <html lang="en" className={inter.className}>
+        <body className="min-h-screen">{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }
