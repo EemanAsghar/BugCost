@@ -148,21 +148,7 @@ ORDER  BY revenue_lost_usd DESC;
 ## 🖥️ The Dashboard
 
 <div align="center">
-
-```
-┌──────────────┬───────────────────────────┬──────────────────────┐
-│  🔴 BUGS     │    INCIDENT TIMELINE      │   🤖 AI ANALYSIS     │
-│              │                           │                      │
-│  $8,400      │  errors  ████▄▁▁▁▁▁▁▁▁▁  │  91% confidence      │
-│  TypeError   │  failed  ▁▁▁████▁▁▁▁▁▁▁  │  ████████████░░      │
-│              │                           │                      │
-│  $3,200      │  ──────────────────────   │  ⟶ Querying sentry   │
-│  PaymentErr  │  [DEPLOY]       [SPIKE]   │  ✓ 2,847 fatal hits  │
-│              │      ◉─────────────◉      │  ✓ PR #142 matched   │
-│  $1,800      │   Deploy  Error  Revenue  │  ✓ $8,400 confirmed  │
-│  SessionErr  │   Event   Spike  Impact   │  ⚑ @sarah-chen       │
-└──────────────┴───────────────────────────┴──────────────────────┘
-```
+<img width="1440" height="765" alt="image" src="https://github.com/user-attachments/assets/989c9be9-cf5e-4a26-aaec-26a063f7ce25" />
 
 </div>
 
