@@ -60,19 +60,8 @@ An engineer manually correlates timestamps across all three. 45 minutes later �
 
 <div align="center">
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│   bug                       engineer        revenue lost     │
-│   ─────────────────────     ───────────     ────────────     │
-│   TypeError: price undef    @sarah-chen        $8,400  🔴    │
-│   PaymentIntentError        @mike-torres       $3,200  🟠    │
-│   SessionExpiredError       @alex-kim          $1,800  🟡    │
-│                                                              │
-│   ✓ 3 sources  ·  1 query  ·  9 seconds                      │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-```
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/68f71a2e-a79c-4a51-a208-7bdc7703c4ac" />
+
 
 </div>
 
