@@ -15,7 +15,7 @@
 
 <br />
 
-[![Demo](https://img.shields.io/badge/🌐%20Live%20Demo-bugcost.vercel.app-ff9f0a?style=for-the-badge)](https://bugcost.vercel.app/demo)
+[![Demo](https://img.shields.io/badge/🌐%20Live%20Demo-bug--cost--nine.vercel.app-ff9f0a?style=for-the-badge)](https://bug-cost-nine.vercel.app/demo)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![Coral SQL](https://img.shields.io/badge/Coral-SQL-ff9f0a?style=flat-square)](https://github.com/withcoral)
