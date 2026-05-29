@@ -1,11 +1,11 @@
-import { runCoralQuery, getTimelineForBug } from "@/lib/coralQuery";
+import { runInvestigation, getTimelineForBug } from "@/lib/coral";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const results = runCoralQuery();
+  const { results, mode } = await runInvestigation();
   const bug = results.find((r) => r.id === id);
 
   if (!bug) {
@@ -13,6 +13,5 @@ export async function GET(
   }
 
   const timeline = getTimelineForBug(id);
-
-  return Response.json({ bug, timeline });
+  return Response.json({ bug, timeline, mode });
 }

@@ -434,6 +434,9 @@ export default function Dashboard() {
   const [timelinePhase, setTimelinePhase] = useState(0);
   const [timelineDone, setTimelineDone] = useState(false);
   const [showSQL, setShowSQL] = useState(false);
+  const [coralMode, setCoralMode] = useState<"live" | "demo">("demo");
+  const [coralSql, setCoralSql] = useState(CORAL_SQL);
+  const [elapsed, setElapsed] = useState<number | null>(null);
 
   // fetch bugs on mount
   useEffect(() => {
@@ -442,6 +445,9 @@ export default function Dashboard() {
       const res = await fetch("/api/investigate");
       const data = await res.json();
       setBugs(data.results);
+      setCoralMode(data.mode ?? "demo");
+      if (data.coral_sql) setCoralSql(data.coral_sql);
+      if (data.elapsed_ms) setElapsed(data.elapsed_ms);
       setLoading(false);
     };
     run();
@@ -511,18 +517,34 @@ export default function Dashboard() {
         <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
           BugCost
         </span>
-        <span
+        {/* Coral mode badge */}
+        <motion.span
+          key={coralMode}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
           style={{
             fontSize: 10,
-            padding: "2px 7px",
+            padding: "2px 8px",
             borderRadius: 99,
-            background: "var(--surface-2)",
-            color: "var(--text-muted)",
-            border: "1px solid var(--border)",
+            fontWeight: 600,
+            background: coralMode === "live"
+              ? "rgba(48,209,88,0.12)"
+              : "rgba(255,159,10,0.1)",
+            color: coralMode === "live" ? "var(--green)" : "var(--orange)",
+            border: `1px solid ${coralMode === "live" ? "rgba(48,209,88,0.3)" : "rgba(255,159,10,0.25)"}`,
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
           }}
         >
-          Demo
-        </span>
+          <motion.span
+            animate={{ opacity: coralMode === "live" ? [1, 0.3, 1] : 1 }}
+            transition={{ duration: 1.5, repeat: coralMode === "live" ? Infinity : 0 }}
+            style={{ width: 5, height: 5, borderRadius: "50%", background: coralMode === "live" ? "var(--green)" : "var(--orange)", display: "inline-block" }}
+          />
+          {coralMode === "live" ? "Coral Live" : "Coral Demo"}
+          {elapsed && <span style={{ opacity: 0.7 }}> · {elapsed}ms</span>}
+        </motion.span>
 
         <div style={{ flex: 1 }} />
 
@@ -609,6 +631,7 @@ export default function Dashboard() {
                   style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: "auto" }}
                 >
                   sentry.issues × github.commits × stripe.charges
+                  {elapsed && ` · executed in ${elapsed}ms`}
                 </span>
               </div>
               <pre
@@ -621,7 +644,7 @@ export default function Dashboard() {
                   margin: 0,
                 }}
               >
-                {CORAL_SQL}
+                {coralSql}
               </pre>
             </div>
           </motion.div>
