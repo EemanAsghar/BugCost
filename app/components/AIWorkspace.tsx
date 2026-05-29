@@ -338,6 +338,8 @@ export function AIWorkspace({
   const [confidence, setConfidence] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [showEvidence, setShowEvidence] = useState(false);
+  const [claudeSummary, setClaudeSummary] = useState<{ summary: string; fix: string; model: string } | null>(null);
+  const [claudeLoading, setClaudeLoading] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -345,6 +347,8 @@ export function AIWorkspace({
     setConfidence(0);
     setIsDone(false);
     setShowEvidence(false);
+    setClaudeSummary(null);
+    setClaudeLoading(false);
     onPhaseChange?.(0, false);
 
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -360,7 +364,20 @@ export function AIWorkspace({
             setConfidence(finalConf);
             setIsDone(true);
             onPhaseChange?.(10, true);
-            setTimeout(() => setShowEvidence(true), 500);
+            setTimeout(() => {
+              setShowEvidence(true);
+              // call Claude for AI summary
+              setClaudeLoading(true);
+              fetch("/api/summarize", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(bug),
+              })
+                .then((r) => r.json())
+                .then((d) => setClaudeSummary(d))
+                .catch(() => null)
+                .finally(() => setClaudeLoading(false));
+            }, 500);
           }, 700);
         }
       }, step.delay * 1000);
@@ -641,6 +658,55 @@ export function AIWorkspace({
         <AnimatePresence>
           {showEvidence ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+
+              {/* Claude AI Summary card */}
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  marginBottom: 8,
+                  background: "linear-gradient(135deg, rgba(191,90,242,0.08) 0%, rgba(10,132,255,0.05) 100%)",
+                  border: "1px solid rgba(191,90,242,0.25)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 5, background: "rgba(191,90,242,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✦</div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--purple)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                    Claude Analysis
+                  </span>
+                  {claudeLoading && (
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      style={{ width: 10, height: 10, borderRadius: "50%", border: "1.5px solid var(--purple)", borderTopColor: "transparent", marginLeft: 4 }} />
+                  )}
+                  {claudeSummary && (
+                    <span style={{ fontSize: 9, color: "var(--text-dim)", marginLeft: "auto" }}>
+                      {claudeSummary.model === "claude-haiku-4-5" ? "claude-haiku-4-5" : "cached"}
+                    </span>
+                  )}
+                </div>
+                {claudeLoading && !claudeSummary && (
+                  <motion.p animate={{ opacity: [0.4, 0.8, 0.4] }} transition={{ duration: 1.5, repeat: Infinity }}
+                    style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "ui-monospace, monospace" }}>
+                    Generating analysis...▊
+                  </motion.p>
+                )}
+                {claudeSummary && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <p style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.65, marginBottom: 8 }}>
+                      {claudeSummary.summary}
+                    </p>
+                    {claudeSummary.fix && (
+                      <div style={{ padding: "8px 10px", borderRadius: 7, background: "rgba(48,209,88,0.07)", border: "1px solid rgba(48,209,88,0.2)" }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: "var(--green)", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fix</p>
+                        <p style={{ fontSize: 11, color: "var(--green)", fontFamily: "ui-monospace, monospace", lineHeight: 1.5 }}>{claudeSummary.fix}</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </motion.div>
+
               {/* Verdict */}
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
