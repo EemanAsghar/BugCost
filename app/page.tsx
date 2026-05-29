@@ -167,7 +167,7 @@ const TECH_STACK = [
 ];
 
 // ─── navbar ───────────────────────────────────────────────────────────────────
-function NavBar({ onGetStarted }: { onGetStarted: () => void }) {
+function NavBar() {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -213,7 +213,7 @@ function NavBar({ onGetStarted }: { onGetStarted: () => void }) {
           </SignUpButton>
         </Show>
         <Show when="signed-in">
-          <button onClick={() => router.push("/dashboard")}
+          <button onClick={() => router.push("/demo")}
             style={{ fontSize: 12, color: "var(--text-muted)", padding: "6px 14px", borderRadius: 7, cursor: "pointer", background: "transparent", border: "1px solid var(--border)" }}>
             Dashboard →
           </button>
@@ -250,7 +250,7 @@ export default function Landing() {
 
   return (
     <div style={{ background: "var(--bg)", color: "var(--text)", overflowX: "hidden" }}>
-      <NavBar onGetStarted={go} />
+      <NavBar />
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "120px 24px 80px", position: "relative", overflow: "hidden" }}>
@@ -291,7 +291,7 @@ export default function Landing() {
             onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 0 36px rgba(255,59,92,0.4)"; }}>
             Stop the bleeding <ArrowRight size={15} />
           </button>
-          <button onClick={() => router.push("/dashboard")}
+          <button onClick={() => router.push("/demo")}
             style={{ fontSize: 13, color: "var(--text-muted)", padding: "14px 20px", borderRadius: 10, cursor: "pointer", background: "transparent", border: "1px solid var(--border)", transition: "all 0.2s" }}
             onMouseEnter={e => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.borderColor = "var(--border-bright)"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; }}>
@@ -545,7 +545,7 @@ export default function Landing() {
               style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 800, color: "#fff", padding: "16px 36px", borderRadius: 12, cursor: "pointer", background: "var(--red)", border: "none", boxShadow: "0 0 48px rgba(255,59,92,0.35)" }}>
               Start free trial <ArrowRight size={16} />
             </button>
-            <button onClick={() => router.push("/dashboard")}
+            <button onClick={() => router.push("/demo")}
               style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--text-muted)", padding: "16px 24px", borderRadius: 12, cursor: "pointer", background: "transparent", border: "1px solid var(--border)" }}>
               View demo →
             </button>

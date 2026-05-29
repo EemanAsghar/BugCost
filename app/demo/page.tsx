@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Database, Shield, Zap } from "lucide-react";
-import { UserButton, Show, useUser } from "@clerk/nextjs";
+import { UserButton, Show } from "@clerk/nextjs";
 import type { BugRow, TimelinePoint } from "@/lib/coralQuery";
 import { CinematicTimeline } from "@/app/components/CinematicTimeline";
 import { AIWorkspace } from "@/app/components/AIWorkspace";
@@ -429,7 +429,6 @@ ORDER BY revenue_lost_usd DESC;`;
 // ─── main dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { user } = useUser();
   const router = useRouter();
   const [bugs, setBugs] = useState<BugRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -438,38 +437,25 @@ export default function Dashboard() {
   const [timelinePhase, setTimelinePhase] = useState(0);
   const [timelineDone, setTimelineDone] = useState(false);
   const [showSQL, setShowSQL] = useState(false);
-  const [coralMode, setCoralMode] = useState<"live" | "demo">("demo");
-  const [coralSql, setCoralSql] = useState(CORAL_SQL);
+  const [coralMode] = useState<"live" | "demo">("demo");
+  const [coralSql] = useState(CORAL_SQL);
   const [elapsed, setElapsed] = useState<number | null>(null);
-
-  // credentials stored in Clerk unsafeMetadata during onboarding
-  const creds = user?.unsafeMetadata as Record<string, string> | undefined;
-  const hasRealCreds = !!(creds?.sentry_token && creds?.github_token && creds?.stripe_key);
-
-  // use bugs directly (real data = already correct; demo = shared mock)
+  const hasRealCreds = false;
   const personalizedBugs = bugs;
 
-  // fetch bugs — POST with real credentials if connected, GET for demo
+  // always fetch demo data — no auth needed
   useEffect(() => {
-    if (!user) return; // wait for Clerk to load
     const run = async () => {
       await new Promise((r) => setTimeout(r, 400));
-      const res = hasRealCreds
-        ? await fetch("/api/investigate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(creds),
-          })
-        : await fetch("/api/investigate");
+      const res = await fetch("/api/investigate");
       const data = await res.json();
       setBugs(data.results ?? []);
-      setCoralMode(data.mode ?? "demo");
-      if (data.coral_sql) setCoralSql(data.coral_sql);
+      // coralMode is always "demo" on this page
       if (data.elapsed_ms) setElapsed(data.elapsed_ms);
       setLoading(false);
     };
     run();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // auto-select top incident 600ms after data loads
   useEffect(() => {
@@ -564,21 +550,10 @@ export default function Dashboard() {
           {elapsed && <span style={{ opacity: 0.7 }}> · {elapsed}ms</span>}
         </motion.span>
 
-        {/* greeting + data source status */}
-        {user && (
-          <span style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
-            {user.firstName ?? user.emailAddresses[0]?.emailAddress?.split("@")[0]}
-            {!hasRealCreds && (
-              <span
-                onClick={() => router.push("/onboarding")}
-                style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: "rgba(255,159,10,0.1)", border: "1px solid rgba(255,159,10,0.3)", color: "var(--orange)", cursor: "pointer" }}
-                title="Click to connect your real Sentry, GitHub & Stripe"
-              >
-                demo data — connect sources →
-              </span>
-            )}
-          </span>
-        )}
+        {/* demo label */}
+        <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(77,171,247,0.1)", border: "1px solid rgba(77,171,247,0.25)", color: "var(--blue-bright)", fontWeight: 600 }}>
+          Demo mode
+        </span>
 
         <div style={{ flex: 1 }} />
 
@@ -616,6 +591,13 @@ export default function Dashboard() {
           <span style={{ color: "var(--text)", fontWeight: 500 }}>Coral</span>
         </div>
 
+        <button
+          onClick={() => router.push("/auth")}
+          style={{ fontSize: 12, fontWeight: 700, color: "#fff", padding: "6px 14px", borderRadius: 7, cursor: "pointer", background: "var(--red)", border: "none" }}
+        >
+          Sign up — use your real data →
+        </button>
+        {/* keep Show/UserButton for signed-in users who visit /demo */}
         <Show when="signed-in">
           <UserButton
             appearance={{
