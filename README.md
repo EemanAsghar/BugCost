@@ -1,40 +1,28 @@
 <div align="center">
-  <br />
-  <br />
 
-  <h1>BugCost</h1>
+<br />
 
-  <p>
-    <strong>Revenue impact analysis for production bugs — automated.</strong><br />
-    Connect Sentry, GitHub, and Stripe. Get an exact dollar amount for every fatal error in under 10 seconds.
-  </p>
+```
+██████╗ ██╗   ██╗ ██████╗  ██████╗ ██████╗ ███████╗████████╗
+██╔══██╗██║   ██║██╔════╝ ██╔════╝██╔═══██╗██╔════╝╚══██╔══╝
+██████╔╝██║   ██║██║  ███╗██║     ██║   ██║███████╗   ██║   
+██╔══██╗██║   ██║██║   ██║██║     ██║   ██║╚════██║   ██║   
+██████╔╝╚██████╔╝╚██████╔╝╚██████╗╚██████╔╝███████║   ██║   
+╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝   
+```
 
-  <br />
+### Every bug has a price. Now you can see it.
 
-  <p>
-    <a href="https://bugcost.vercel.app/demo">
-      <img src="https://img.shields.io/badge/Live%20Demo-→-000000?style=for-the-badge&labelColor=000" alt="Live Demo" />
-    </a>
-    &nbsp;
-    <a href="https://bugcost.vercel.app/auth">
-      <img src="https://img.shields.io/badge/Get%20Started-→-ff9f0a?style=for-the-badge&labelColor=ff9f0a&color=000" alt="Get Started" />
-    </a>
-  </p>
+<br />
 
-  <br />
+[![Demo](https://img.shields.io/badge/🌐%20Live%20Demo-bugcost.vercel.app-ff9f0a?style=for-the-badge)](https://bugcost.vercel.app/demo)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Coral SQL](https://img.shields.io/badge/Coral-SQL-ff9f0a?style=flat-square)](https://github.com/withcoral)
+[![Claude AI](https://img.shields.io/badge/Claude-Haiku-bf5af2?style=flat-square)](https://anthropic.com)
+[![License](https://img.shields.io/badge/License-MIT-30d158?style=flat-square)](LICENSE)
 
-  <p>
-    <img src="https://img.shields.io/badge/TypeScript-3178c6?style=flat-square&logo=typescript&logoColor=white" />
-    <img src="https://img.shields.io/badge/Next.js%2016-000?style=flat-square&logo=nextdotjs&logoColor=white" />
-    <img src="https://img.shields.io/badge/Coral%20SQL-ff9f0a?style=flat-square" />
-    <img src="https://img.shields.io/badge/Claude%20Haiku-bf5af2?style=flat-square" />
-    <img src="https://img.shields.io/badge/Clerk%20Auth-6c47ff?style=flat-square" />
-    <img src="https://img.shields.io/badge/Vercel-000?style=flat-square&logo=vercel&logoColor=white" />
-    <img src="https://img.shields.io/badge/license-MIT-30d158?style=flat-square" />
-  </p>
-
-  <br />
-  <br />
+<br />
 
 </div>
 
@@ -42,32 +30,25 @@
 
 <br />
 
-## The problem every engineering team has
+## 😤 The Problem
 
-Your checkout is broken. You can see it in Sentry. Revenue is dropping in Stripe. Something changed in GitHub.
+Your checkout just broke. You have three tabs open and zero answers.
 
-Three dashboards. Three timelines. An engineer manually correlating timestamps for 45 minutes to produce a number nobody is confident in.
+<div align="center">
 
-**BugCost solves this with a single SQL query.**
+| | What you see | What you don't know |
+|:---:|---|---|
+| 🔴 **Sentry** | "TypeError in checkout" | How bad is this? |
+| 💳 **Stripe** | "Revenue dropped 40%" | Which bug caused it? |
+| 🐙 **GitHub** | "PR #142 merged today" | Did this cause it? |
+
+</div>
 
 <br />
 
-## What it does
+An engineer manually correlates timestamps across all three. 45 minutes later — *maybe* — you have a number.
 
-BugCost joins your Sentry errors, GitHub commits, and Stripe payment failures across a single federated SQL query using [Coral](https://github.com/withcoral). Claude Haiku analyzes the correlated results to confirm root cause and assign confidence. The whole pipeline completes in under 10 seconds.
-
-```
-Input:   3 separate APIs, messy timestamps, no shared keys
-Output:  ranked bugs × exact revenue loss × responsible commit × root cause
-```
-
-```
-bug                       engineer         failed_payments   revenue_lost
-────────────────────────  ───────────────  ───────────────   ────────────
-TypeError: price undef    @sarah-chen               280          $8,400
-PaymentIntentError        @mike-torres               94          $3,200
-SessionExpiredError       @alex-kim                  51          $1,800
-```
+**BugCost gives you that number in 9 seconds.**
 
 <br />
 
@@ -75,35 +56,88 @@ SessionExpiredError       @alex-kim                  51          $1,800
 
 <br />
 
-## The core query
+## ✅ The Answer
 
-This is the heart of BugCost. Everything else — the UI, the AI analysis, the auth — exists to show you this result.
+<div align="center">
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│   bug                       engineer        revenue lost     │
+│   ─────────────────────     ───────────     ────────────     │
+│   TypeError: price undef    @sarah-chen        $8,400  🔴    │
+│   PaymentIntentError        @mike-torres       $3,200  🟠    │
+│   SessionExpiredError       @alex-kim          $1,800  🟡    │
+│                                                              │
+│   ✓ 3 sources  ·  1 query  ·  9 seconds                      │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+</div>
+
+<br />
+
+---
+
+<br />
+
+## 🎬 How It Works
+
+<div align="center">
+
+```
+  🔴 Sentry          🐙 GitHub          💳 Stripe
+  fatal errors        commits + PRs       failed charges
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │  🪸 Coral   │
+                    │  SQL JOIN   │  ← one query, no glue code
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │  🤖 Claude  │
+                    │  Haiku AI   │  ← root cause + confidence
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │  📊 BugCost │
+                    │  Dashboard  │  ← ranked by revenue lost
+                    └─────────────┘
+```
+
+</div>
+
+BugCost joins your three data sources with a **single SQL query** using [Coral](https://github.com/withcoral) — no ETL, no data pipeline, no ingestion. The result goes straight to Claude, which confirms root cause and assigns a confidence score. The whole thing runs in under 10 seconds.
+
+<br />
+
+---
+
+<br />
+
+## ⚡ The Query That Makes It Possible
+
+This is the entire product — one SQL statement joining three live APIs:
 
 ```sql
 SELECT
-  s.title                                          AS bug,
-  g.author__login                                  AS introduced_by,
-  g.commit__message                                AS commit,
-  COUNT(p.id)                                      AS failed_payments,
-  CAST(SUM(CAST(p.amount AS DOUBLE)) / 100.0
-       AS DOUBLE)                                  AS revenue_lost_usd
+  s.title           AS bug,
+  g.author__login   AS introduced_by,
+  COUNT(p.id)       AS failed_payments,
+  SUM(p.amount)/100 AS revenue_lost_usd
 
 FROM   sentry.issues  s
-
-JOIN   github.commits g
-    ON CAST(g.commit__author__date AS TIMESTAMP)
-           BETWEEN CAST(s.first_seen AS TIMESTAMP) - INTERVAL '2 hours'
-               AND CAST(s.first_seen AS TIMESTAMP)
-
-JOIN   stripe.charges p
-    ON CAST(p.created AS TIMESTAMP) >= CAST(s.first_seen AS TIMESTAMP)
-   AND p.status = 'failed'
+JOIN   github.commits g  ON  g.committed  BETWEEN  s.first_seen - 2h  AND  s.first_seen
+JOIN   stripe.charges p  ON  p.created   >=  s.first_seen  AND  p.status = 'failed'
 
 WHERE  s.level = 'fatal'
 ORDER  BY revenue_lost_usd DESC;
 ```
 
-Without Coral, this query cannot be written. Sentry, GitHub, and Stripe speak different APIs, return different formats, and share no common schema. Coral federates them into a single SQL namespace — no ETL, no ingestion pipeline, no intermediate database.
+> Without Coral, this query cannot exist. Sentry, GitHub, and Stripe have different APIs, different schemas, and no shared keys. Coral federates them into a single SQL namespace.
 
 <br />
 
@@ -111,81 +145,32 @@ Without Coral, this query cannot be written. Sentry, GitHub, and Stripe speak di
 
 <br />
 
-## Features
+## 🖥️ The Dashboard
 
-**Automated revenue attribution**
-Every fatal Sentry error is joined to the GitHub commit that introduced it and the Stripe charges that failed afterward — automatically, with exact dollar amounts.
-
-**AI root cause analysis**
-Claude Haiku receives clean, typed, correlated rows — not raw JSON — and returns a 2-sentence root cause with a confidence percentage. No hallucinations, no prompt engineering required.
-
-**Live and demo modes**
-Connect your own Sentry, GitHub, and Stripe credentials in onboarding and the dashboard switches from demo data to your real production environment. The live mode badge makes the distinction clear.
-
-**Per-user credential isolation**
-Credentials are stored locally in the browser and passed at query time. Nothing sensitive touches the server.
-
-**Cinematic investigation timeline**
-Each incident has a visual timeline overlaying deploy events, error spikes, and revenue impact. Built with Recharts and Framer Motion.
-
-<br />
-
----
-
-<br />
-
-## How it's built
+<div align="center">
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│   Sentry API          GitHub API          Stripe API           │
-│       │                   │                   │                │
-│       └───────────────────┼───────────────────┘                │
-│                           │                                     │
-│                    ┌──────▼──────┐                              │
-│                    │  Coral CLI  │  ← one SQL JOIN              │
-│                    │  subprocess │    no ETL, no ingestion      │
-│                    └──────┬──────┘                              │
-│                           │                                     │
-│                    ┌──────▼──────┐                              │
-│                    │ Claude Haiku│  ← structured rows in        │
-│                    │  (Anthropic)│    root cause + confidence   │
-│                    └──────┬──────┘                              │
-│                           │                                     │
-│                    ┌──────▼──────┐                              │
-│                    │  Next.js 16 │  ← ranked bug dashboard      │
-│                    │  dashboard  │    investigation timeline    │
-│                    └─────────────┘                              │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────┬───────────────────────────┬──────────────────────┐
+│  🔴 BUGS     │    INCIDENT TIMELINE      │   🤖 AI ANALYSIS     │
+│              │                           │                      │
+│  $8,400      │  errors  ████▄▁▁▁▁▁▁▁▁▁  │  91% confidence      │
+│  TypeError   │  failed  ▁▁▁████▁▁▁▁▁▁▁  │  ████████████░░      │
+│              │                           │                      │
+│  $3,200      │  ──────────────────────   │  ⟶ Querying sentry   │
+│  PaymentErr  │  [DEPLOY]       [SPIKE]   │  ✓ 2,847 fatal hits  │
+│              │      ◉─────────────◉      │  ✓ PR #142 matched   │
+│  $1,800      │   Deploy  Error  Revenue  │  ✓ $8,400 confirmed  │
+│  SessionErr  │   Event   Spike  Impact   │  ⚑ @sarah-chen       │
+└──────────────┴───────────────────────────┴──────────────────────┘
 ```
 
-**Request lifecycle:**
+</div>
 
-1. User opens the dashboard or triggers an investigation
-2. Next.js API route spawns `coral sql --format json` as a subprocess
-3. Coral federates the JOIN across live Sentry, GitHub, and Stripe
-4. Typed result rows — not raw API responses — are passed to Claude
-5. Claude returns root cause + confidence in a single completion
-6. Dashboard renders bugs ranked by revenue impact
+**Three-panel workspace:**
 
-<br />
-
----
-
-<br />
-
-## Stack
-
-| | |
-|---|---|
-| **Query federation** | [Coral CLI](https://github.com/withcoral) — cross-source SQL, handles auth and schema normalization |
-| **AI analysis** | Claude Haiku — root cause analysis on structured data |
-| **Framework** | Next.js 16 (App Router, API Routes, SSR) |
-| **Auth** | Clerk — GitHub OAuth, Google, email/password |
-| **Charts** | Recharts + Framer Motion |
-| **Deployment** | Vercel |
+- 🔴 **Bug list** — ranked by revenue lost, updated live
+- 📈 **Timeline** — deploy events overlaid with error spikes and payment failures  
+- 🤖 **AI feed** — Claude's reasoning, step by step, in real time
 
 <br />
 
@@ -193,164 +178,87 @@ Each incident has a visual timeline overlaying deploy events, error spikes, and 
 
 <br />
 
-## Getting started
+## ✨ Features
 
-**Requirements**
+- 🪸 **Coral-powered cross-source join** — Sentry × GitHub × Stripe in one SQL query
+- 🤖 **AI root cause analysis** — Claude gets clean rows, not raw JSON, so results are exact
+- 💰 **Revenue-per-bug ranking** — every incident has a precise dollar amount attached
+- ⚡ **9-second investigation** — from symptom to cause to dollar impact
+- 🔐 **Per-user credential isolation** — your API keys stay in your browser, never on our server
+- 🎭 **Live + demo modes** — try it instantly, connect real data when ready
+- 🎨 **Cinematic timeline** — animated incident playback with deploy markers and impact zones
+
+<br />
+
+---
+
+<br />
+
+## 🛠️ Stack
+
+<div align="center">
+
+| | Technology | Role |
+|:---:|---|---|
+| 🪸 | **Coral CLI** | Cross-source SQL federation — the engine everything runs on |
+| 🤖 | **Claude Haiku** | Root cause analysis on structured query output |
+| ⚡ | **Next.js 16** | App Router, API Routes, server-side rendering |
+| 🔐 | **Clerk** | Auth — GitHub OAuth, Google, email/password |
+| 📊 | **Recharts** | Incident timeline charts |
+| 🎨 | **Framer Motion** | Investigation flow animations |
+| 🚀 | **Vercel** | Deployment |
+
+</div>
+
+<br />
+
+---
+
+<br />
+
+## 🚀 Getting Started
+
+**1. Install Coral**
 
 ```bash
 brew install withcoral/tap/coral
-coral --version   # 0.4.1+
-node --version    # 18+
 ```
 
-**Setup**
+**2. Clone and install**
 
 ```bash
 git clone https://github.com/EemanAsghar/BugCost.git
-cd BugCost
-npm install
+cd BugCost && npm install
 cp .env.local.example .env.local
 ```
 
-Open `.env.local` and add:
+**3. Add your keys to `.env.local`**
 
 ```bash
-# Clerk — https://clerk.com
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
-
-# Anthropic — https://console.anthropic.com
-# Optional. Falls back to pre-written analysis if absent.
-ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_API_KEY=sk-ant-...    # optional
 ```
+
+**4. Run**
 
 ```bash
 npm run dev -- --port 3001
-# → http://localhost:3001
 ```
 
-The `/demo` route works without any credentials or sign-in.
+> Try it immediately at [`/demo`](http://localhost:3001/demo) — no login, no API keys needed.
 
 <br />
 
-**Connect your production data**
+**Connect your real production data:**
 
 ```bash
-# Register sources with Coral
-SENTRY_TOKEN=sntrys_...  SENTRY_ORG=your-org   coral source add sentry
-GITHUB_TOKEN=ghp_...                            coral source add github
-STRIPE_API_KEY=sk_live_...                      coral source add stripe
-
-coral source list   # verify
+SENTRY_TOKEN=sntrys_...   SENTRY_ORG=your-org   coral source add sentry
+GITHUB_TOKEN=ghp_...                             coral source add github
+STRIPE_API_KEY=sk_live_...                       coral source add stripe
 ```
 
-Sign up at `/auth`, enter your credentials in the onboarding flow, and the dashboard will query your real production data.
-
-<br />
-
----
-
-<br />
-
-## Coral integration
-
-BugCost integrates Coral at two levels.
-
-**CLI subprocess** — every investigation runs a real query:
-
-```typescript
-// lib/coral.ts
-const proc = spawn("coral", ["sql", "--format", "json", query]);
-```
-
-If Coral credentials are absent, the app falls back to local JSONL fixtures and displays a `DEMO MODE` badge.
-
-**Schema-verified columns** — column names were discovered via live introspection, not assumed or guessed:
-
-```sql
-SELECT column_name
-FROM   information_schema.columns
-WHERE  table_schema = 'sentry'
-AND    table_name   = 'issues';
-```
-
-| Source | Table | Columns |
-|---|---|---|
-| Sentry | `sentry.issues` | `id`, `title`, `level`, `first_seen`, `count`, `project` |
-| GitHub | `github.commits` | `sha`, `author__login`, `commit__message`, `commit__author__date` |
-| Stripe | `stripe.charges` | `id`, `amount`, `status`, `created` |
-
-<br />
-
----
-
-<br />
-
-## Project structure
-
-```
-bugcost/
-├── app/
-│   ├── page.tsx              # Landing — live revenue counter, SQL explainer
-│   ├── auth/                 # Clerk sign-in / sign-up
-│   ├── onboarding/           # Connect Sentry, GitHub, Stripe credentials
-│   ├── dashboard/            # Investigation workspace (requires auth)
-│   ├── demo/                 # Public demo, no login needed
-│   └── api/
-│       ├── investigate/      # GET: demo  |  POST: real credentials
-│       ├── bug/[id]/         # Bug detail + timeline data
-│       └── summarize/        # Claude root cause endpoint
-│
-├── lib/
-│   ├── coral.ts              # Coral subprocess + demo fallback
-│   ├── coralQuery.ts         # JOIN engine over JSONL fixtures
-│   ├── realQuery.ts          # JOIN engine over live APIs
-│   └── mockSlack.ts          # Incident Slack threads per bug
-│
-└── data/
-    ├── sentry_issues.jsonl   # 8 crafted fatal errors
-    ├── github_commits.jsonl  # 15 commits with matched timestamps
-    └── stripe_charges.jsonl  # 734 charges, 280 correlated failures
-```
-
-<br />
-
----
-
-<br />
-
-## Why not just call the APIs directly?
-
-You could. Here's what that looks like:
-
-| | Without Coral | With Coral |
-|---|---|---|
-| Data access | 3 separate API clients | 1 SQL query |
-| Schema normalization | hand-written per source | handled by Coral |
-| Correlation logic | manual timestamp math | `JOIN ... ON` |
-| LLM input | raw JSON blobs | clean typed rows |
-| Result confidence | estimated | exact |
-| Time to answer | ~45 minutes manual | ~9 seconds automated |
-
-The cross-source JOIN is not a convenience. It's the only way to produce an exact, verifiable revenue-per-bug figure.
-
-<br />
-
----
-
-<br />
-
-## Contributing
-
-Pull requests are welcome. For significant changes, open an issue first.
-
-```bash
-git checkout -b feature/your-feature
-npm run dev -- --port 3001
-# make changes, test at /demo
-git commit -m "feat: describe your change"
-git push origin feature/your-feature
-```
+Sign up at `/auth` → enter credentials in onboarding → your live bugs appear ranked by revenue.
 
 <br />
 
@@ -360,10 +268,12 @@ git push origin feature/your-feature
 
 <div align="center">
 
-MIT License © 2026 [Eeman Asghar](https://github.com/EemanAsghar)
+Built with ❤️ using **[Coral](https://github.com/withcoral)** · **[Claude](https://anthropic.com)** · **[Next.js](https://nextjs.org)**
+
+MIT © 2026 [Eeman Asghar](https://github.com/EemanAsghar)
 
 <br />
 
-Built with [Coral](https://github.com/withcoral) · [Claude](https://anthropic.com) · [Next.js](https://nextjs.org)
+*Pirates of the Coral Bean Hackathon · May 2026*
 
 </div>
