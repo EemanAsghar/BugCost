@@ -86,27 +86,7 @@ An engineer manually correlates timestamps across all three. 45 minutes later �
 
 <div align="center">
 
-```
-  🔴 Sentry          🐙 GitHub          💳 Stripe
-  fatal errors        commits + PRs       failed charges
-       │                   │                   │
-       └───────────────────┼───────────────────┘
-                           │
-                    ┌──────▼──────┐
-                    │  🪸 Coral   │
-                    │  SQL JOIN   │  ← one query, no glue code
-                    └──────┬──────┘
-                           │
-                    ┌──────▼──────┐
-                    │  🤖 Claude  │
-                    │  Haiku AI   │  ← root cause + confidence
-                    └──────┬──────┘
-                           │
-                    ┌──────▼──────┐
-                    │  📊 BugCost │
-                    │  Dashboard  │  ← ranked by revenue lost
-                    └─────────────┘
-```
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/503fc802-ae08-4391-9ce9-2ed4e76542dc" />
 
 </div>
 
