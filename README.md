@@ -60,7 +60,7 @@ An engineer manually correlates timestamps across all three. 45 minutes later ‚Ä
 
 <div align="center">
 
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/68f71a2e-a79c-4a51-a208-7bdc7703c4ac" />
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/637197b7-3b21-4409-8d82-2f9117b9f042" />
 
 
 </div>
@@ -75,11 +75,10 @@ An engineer manually correlates timestamps across all three. 45 minutes later ‚Ä
 
 <div align="center">
 
-<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/503fc802-ae08-4391-9ce9-2ed4e76542dc" />
-
-</div>
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/b67d12bc-411f-4cd3-934f-04efb5754830" />
 
 BugCost joins your three data sources with a **single SQL query** using [Coral](https://github.com/withcoral) ‚Äî no ETL, no data pipeline, no ingestion. The result goes straight to Claude, which confirms root cause and assigns a confidence score. The whole thing runs in under 10 seconds.
+</div>
 
 <br />
 
@@ -117,7 +116,7 @@ ORDER  BY revenue_lost_usd DESC;
 ## üñ•Ô∏è The Dashboard
 
 <div align="center">
-<img width="1440" height="765" alt="image" src="https://github.com/user-attachments/assets/989c9be9-cf5e-4a26-aaec-26a063f7ce25" />
+<img width="1440" height="765" alt="image" src="https://github.com/user-attachments/assets/f8df901d-0c8a-43c2-a638-db9fd14a0ab6" />
 
 </div>
 
