@@ -138,24 +138,31 @@ export default function Onboarding() {
   };
 
   const handleFinish = async () => {
-    setSyncing(true);
-    // Save all credentials to Clerk's unsafeMetadata
-    if (user) {
-      try {
-        await user.update({
-          unsafeMetadata: {
-            sentry_token:  values.sentry_token,
-            sentry_org:    values.sentry_org,
-            github_token:  values.github_token,
-            github_owner:  values.github_owner,
-            github_repo:   values.github_repo,
-            stripe_key:    values.stripe_key,
-          },
-        });
-      } catch {
-        // credentials saved — proceed even if metadata update fails
-      }
+    const creds = {
+      sentry_token:  values.sentry_token,
+      sentry_org:    values.sentry_org,
+      github_token:  values.github_token,
+      github_owner:  values.github_owner,
+      github_repo:   values.github_repo,
+      stripe_key:    values.stripe_key,
+    };
+
+    // Save to localStorage immediately — no async, no race condition
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        `bugcost_creds_${user?.id ?? "guest"}`,
+        JSON.stringify(creds)
+      );
     }
+
+    // Also save to Clerk unsafeMetadata (best-effort, async)
+    if (user) {
+      user.update({ unsafeMetadata: creds }).catch(() => {
+        // localStorage already has it — this is fine
+      });
+    }
+
+    setSyncing(true);
   };
 
   if (syncing) {

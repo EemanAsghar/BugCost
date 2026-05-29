@@ -442,18 +442,36 @@ export default function Dashboard() {
   const [coralSql, setCoralSql] = useState(CORAL_SQL);
   const [elapsed, setElapsed] = useState<number | null>(null);
 
-  // credentials stored in Clerk unsafeMetadata during onboarding
-  const creds = user?.unsafeMetadata as Record<string, string> | undefined;
-  const hasRealCreds = !!(creds?.sentry_token && creds?.github_token && creds?.stripe_key);
-
-  // use bugs directly (real data = already correct; demo = shared mock)
   const personalizedBugs = bugs;
 
-  // fetch bugs — POST with real credentials if connected, GET for demo
+  // fetch bugs on mount — don't wait for user object (avoids Clerk JWT timing issues)
   useEffect(() => {
-    if (!user) return; // wait for Clerk to load
     const run = async () => {
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 300));
+
+      // Read credentials: localStorage first (instant), fall back to Clerk metadata
+      const userId = user?.id ?? "guest";
+      const stored =
+        typeof window !== "undefined"
+          ? (() => {
+              try {
+                return JSON.parse(
+                  localStorage.getItem(`bugcost_creds_${userId}`) ?? "{}"
+                ) as Record<string, string>;
+              } catch { return {}; }
+            })()
+          : {};
+
+      // Merge: localStorage wins over Clerk metadata (localStorage is always fresh)
+      const clerkMeta = (user?.unsafeMetadata ?? {}) as Record<string, string>;
+      const creds = { ...clerkMeta, ...stored };
+
+      const hasRealCreds = !!(
+        creds.sentry_token && creds.sentry_org &&
+        creds.github_token && creds.github_owner && creds.github_repo &&
+        creds.stripe_key
+      );
+
       const res = hasRealCreds
         ? await fetch("/api/investigate", {
             method: "POST",
@@ -461,6 +479,7 @@ export default function Dashboard() {
             body: JSON.stringify(creds),
           })
         : await fetch("/api/investigate");
+
       const data = await res.json();
       setBugs(data.results ?? []);
       setCoralMode(data.mode ?? "demo");
@@ -469,7 +488,18 @@ export default function Dashboard() {
       setLoading(false);
     };
     run();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // derive hasRealCreds for the header badge
+  const hasRealCreds = (() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const stored = JSON.parse(
+        localStorage.getItem(`bugcost_creds_${user?.id ?? "guest"}`) ?? "{}"
+      ) as Record<string, string>;
+      return !!(stored.sentry_token && stored.github_token && stored.stripe_key);
+    } catch { return false; }
+  })();
 
   // auto-select top incident 600ms after data loads
   useEffect(() => {
