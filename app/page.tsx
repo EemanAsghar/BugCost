@@ -137,26 +137,6 @@ const STEPS = [
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    quote: "We'd been losing checkout revenue for 11 days. BugCost found the commit in 9 seconds. It was the first tool that actually told us what it cost.",
-    name: "Priya N.",
-    role: "Head of Engineering, Series B SaaS",
-    avatar: "PN",
-  },
-  {
-    quote: "The Coral SQL JOIN is genius. It's doing in one query what used to take me 3 open tabs and 40 minutes of manual correlation.",
-    name: "James W.",
-    role: "Staff Engineer",
-    avatar: "JW",
-  },
-  {
-    quote: "The Claude summary is scary good. It told us exactly which line to fix and why the refactor broke it. First response out of any AI tool that was actually correct.",
-    name: "Sarah C.",
-    role: "CTO, E-commerce platform",
-    avatar: "SC",
-  },
-];
 
 const TECH_STACK = [
   { name: "Coral",    role: "Cross-source SQL JOIN engine",         color: "#ff9f0a", desc: "Queries Sentry, GitHub and Stripe simultaneously. Handles auth, rate limits, pagination. 100% local." },
@@ -509,28 +489,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ───────────────────────────────────────────────────── */}
-      <section style={{ padding: "96px 48px", maxWidth: 960, margin: "0 auto" }}>
-        <SectionLabel label="What engineers say" />
-        <h2 style={{ fontSize: "clamp(28px, 3.5vw, 42px)", fontWeight: 900, letterSpacing: "-0.04em", textAlign: "center", marginBottom: 48 }}>
-          Engineers ship faster.<br />Revenue recovers faster.
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-          {TESTIMONIALS.map((t, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-              style={{ padding: "24px", borderRadius: 14, background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.75, marginBottom: 20, fontStyle: "italic" }}>&ldquo;{t.quote}&rdquo;</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(10,132,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "var(--blue-bright)" }}>{t.avatar}</div>
-                <div>
-                  <p style={{ fontSize: 12, fontWeight: 700 }}>{t.name}</p>
-                  <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{t.role}</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       {/* ── FINAL CTA ──────────────────────────────────────────────────────── */}
       <section style={{ padding: "96px 48px", textAlign: "center", borderTop: "1px solid var(--border)", position: "relative", overflow: "hidden" }}>
