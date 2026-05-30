@@ -166,9 +166,7 @@ function NavBar() {
       transition: "all 0.3s",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, cursor: "pointer" }}>
-        <div style={{ width: 26, height: 26, borderRadius: 7, background: "rgba(255,59,92,0.15)", border: "1px solid rgba(255,59,92,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Shield size={12} color="var(--red)" />
-        </div>
+        <img src="/BugCost-logo.png" alt="BugCost" style={{ height: 32, width: 32, objectFit: "contain" }} />
         <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em" }}>BugCost</span>
       </div>
       <div style={{ display: "flex", gap: 24 }}>
