@@ -166,7 +166,7 @@ function NavBar() {
       transition: "all 0.3s",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, cursor: "pointer" }}>
-        <img src="/BugCost-logo.png" alt="BugCost" style={{ height: 40, width: 40, objectFit: "contain", borderRadius: 6 }} />
+        <img src="/BugCost-logo.png" alt="BugCost" style={{ height: 52, width: 52, objectFit: "contain" }} />
       </div>
       <div style={{ display: "flex", gap: 24 }}>
         {["How it works", "Technology", "Features"].map((l) => (

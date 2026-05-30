@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: "BugCost — Every Bug Has a Price",
   description:
     "Autonomous Revenue Impact Investigation Platform. Powered by Coral + Claude.",
+  icons: {
+    icon: "/BugCost-Favicon.png",
+    apple: "/BugCost-Favicon.png",
+  },
   openGraph: {
     title: "BugCost — Every Bug Has a Price",
     description: "See exactly how much each bug costs your business.",
