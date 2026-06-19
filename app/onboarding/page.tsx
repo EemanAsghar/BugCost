@@ -153,6 +153,8 @@ export default function Onboarding() {
         `bugcost_creds_${user?.id ?? "guest"}`,
         JSON.stringify(creds)
       );
+      // Also save with device-level key so dashboard finds it before Clerk user loads
+      localStorage.setItem("bugcost_creds", JSON.stringify(creds));
     }
 
     // Also save to Clerk unsafeMetadata (best-effort, async)

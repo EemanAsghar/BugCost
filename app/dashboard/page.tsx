@@ -449,15 +449,16 @@ export default function Dashboard() {
     const run = async () => {
       await new Promise((r) => setTimeout(r, 300));
 
-      // Read credentials: localStorage first (instant), fall back to Clerk metadata
+      // Read credentials: user-specific key first, fall back to device-level key
+      // (device-level key avoids race where Clerk user hasn't loaded yet)
       const userId = user?.id ?? "guest";
       const stored =
         typeof window !== "undefined"
           ? (() => {
               try {
-                return JSON.parse(
-                  localStorage.getItem(`bugcost_creds_${userId}`) ?? "{}"
-                ) as Record<string, string>;
+                const userKey = localStorage.getItem(`bugcost_creds_${userId}`);
+                const deviceKey = localStorage.getItem("bugcost_creds");
+                return JSON.parse(userKey ?? deviceKey ?? "{}") as Record<string, string>;
               } catch { return {}; }
             })()
           : {};
@@ -494,9 +495,9 @@ export default function Dashboard() {
   const hasRealCreds = (() => {
     if (typeof window === "undefined") return false;
     try {
-      const stored = JSON.parse(
-        localStorage.getItem(`bugcost_creds_${user?.id ?? "guest"}`) ?? "{}"
-      ) as Record<string, string>;
+      const userKey = localStorage.getItem(`bugcost_creds_${user?.id ?? "guest"}`);
+      const deviceKey = localStorage.getItem("bugcost_creds");
+      const stored = JSON.parse(userKey ?? deviceKey ?? "{}") as Record<string, string>;
       return !!(stored.sentry_token && stored.github_token && stored.stripe_key);
     } catch { return false; }
   })();
