@@ -169,10 +169,11 @@ function NavBar() {
         <img src="/BugCost-logo.png" alt="BugCost" style={{ height: 72, width: 72, objectFit: "contain" }} />
       </div>
       <div style={{ display: "flex", gap: 24 }}>
-        {["How it works", "Technology", "Features"].map((l) => (
+        {[["How it works", "how-it-works"], ["Technology", "technology"], ["Features", "features"]].map(([l, id]) => (
           <span key={l} style={{ fontSize: 13, color: "var(--text-muted)", cursor: "pointer", transition: "color 0.2s" }}
             onMouseEnter={e => (e.currentTarget.style.color = "var(--text)")}
             onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
+            onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })}
           >{l}</span>
         ))}
       </div>
@@ -408,7 +409,7 @@ export default function Landing() {
       </section>
 
       {/* ── HOW IT WORKS ───────────────────────────────────────────────────── */}
-      <section style={{ padding: "80px 48px", borderTop: "1px solid var(--border)", background: "var(--surface)" }}>
+      <section id="how-it-works" style={{ padding: "80px 48px", borderTop: "1px solid var(--border)", background: "var(--surface)" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <SectionLabel label="How it works" />
           <h2 style={{ fontSize: "clamp(28px, 3.5vw, 42px)", fontWeight: 900, letterSpacing: "-0.04em", textAlign: "center", marginBottom: 56 }}>
@@ -432,7 +433,7 @@ export default function Landing() {
       </section>
 
       {/* ── TECHNOLOGY ─────────────────────────────────────────────────────── */}
-      <section style={{ padding: "96px 48px", maxWidth: 960, margin: "0 auto" }}>
+      <section id="technology" style={{ padding: "96px 48px", maxWidth: 960, margin: "0 auto" }}>
         <SectionLabel label="Technology" />
         <h2 style={{ fontSize: "clamp(28px, 3.5vw, 42px)", fontWeight: 900, letterSpacing: "-0.04em", textAlign: "center", marginBottom: 12 }}>
           Coral + Claude.<br />The only combination that works.
@@ -463,7 +464,7 @@ export default function Landing() {
       </section>
 
       {/* ── FEATURES ───────────────────────────────────────────────────────── */}
-      <section style={{ padding: "80px 48px", borderTop: "1px solid var(--border)", background: "var(--surface)" }}>
+      <section id="features" style={{ padding: "80px 48px", borderTop: "1px solid var(--border)", background: "var(--surface)" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <SectionLabel label="Features" />
           <h2 style={{ fontSize: "clamp(28px, 3.5vw, 42px)", fontWeight: 900, letterSpacing: "-0.04em", textAlign: "center", marginBottom: 48 }}>
