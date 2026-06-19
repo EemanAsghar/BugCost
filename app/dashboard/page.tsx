@@ -428,6 +428,51 @@ ORDER BY revenue_lost_usd DESC;`;
 
 // ─── main dashboard ───────────────────────────────────────────────────────────
 
+function EmptyState({ onConnect }: { onConnect: () => void }) {
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 32, padding: 48 }}>
+      <div style={{ textAlign: "center", maxWidth: 480 }}>
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 99, background: "rgba(255,159,10,0.08)", border: "1px solid rgba(255,159,10,0.25)", marginBottom: 24 }}>
+          <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+            style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--orange)", display: "inline-block" }} />
+          <span style={{ fontSize: 11, color: "var(--orange)", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>No data sources connected</span>
+        </motion.div>
+        <motion.h2 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 12 }}>
+          Connect your stack to get started
+        </motion.h2>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+          style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7 }}>
+          BugCost needs access to Sentry, GitHub, and Stripe to calculate revenue impact per bug. Your credentials stay in your browser — nothing touches our server.
+        </motion.p>
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, width: "100%", maxWidth: 560 }}>
+        {[
+          { name: "Sentry", icon: "⬡", color: "#e03c31", desc: "Fatal errors & incidents" },
+          { name: "GitHub", icon: "⬡", color: "#4dabf7", desc: "Commits & deploy history" },
+          { name: "Stripe", icon: "⬡", color: "#bf5af2", desc: "Failed charges & revenue" },
+        ].map((s) => (
+          <div key={s.name} style={{ padding: "18px 16px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)", textAlign: "center" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `${s.color}18`, border: `1px solid ${s.color}44`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", fontSize: 18 }}>{s.icon}</div>
+            <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{s.name}</p>
+            <p style={{ fontSize: 11, color: "var(--text-muted)" }}>{s.desc}</p>
+          </div>
+        ))}
+      </motion.div>
+
+      <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+        onClick={onConnect}
+        style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 800, color: "#fff", padding: "14px 32px", borderRadius: 10, cursor: "pointer", background: "var(--red)", border: "none", boxShadow: "0 0 36px rgba(255,59,92,0.35)" }}>
+        Connect data sources →
+      </motion.button>
+      <p style={{ fontSize: 12, color: "var(--text-dim)" }}>Takes about 2 minutes</p>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useUser();
   const router = useRouter();
@@ -726,7 +771,13 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
+      {/* ─── Empty state — no sources connected ────────────────────────────── */}
+      {!loading && !hasRealCreds && (
+        <EmptyState onConnect={() => router.push("/onboarding")} />
+      )}
+
       {/* ─── Three-panel body ───────────────────────────────────────────────── */}
+      {(loading || hasRealCreds) && (
       <div
         style={{
           flex: 1,
@@ -975,6 +1026,7 @@ export default function Dashboard() {
           </AnimatePresence>
         </div>
       </div>
+      )}
     </div>
   );
 }
